@@ -4,12 +4,11 @@ import csv
 import os
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 OUTPUT_PATH = "/opt/airflow/dags/digital_wallet_transactions.csv"
 
 # ==================== 1. EXTRACT TASK ====================
-def generate_and_save_esewa_data():
+def generate_and_save_wallet_data():
     print("--- STARTING DIGITAL WALLET DATA EXTRACTION ---")
     payment_modes = ["Wallet Transfer", "QR Payment", "Bank Transfer", "Utility Bill Pay"]
     statuses = ["SUCCESS", "SUCCESS", "SUCCESS", "FAILED"]
@@ -33,7 +32,7 @@ def generate_and_save_esewa_data():
 
 # ==================== 2. TRANSFORM TASK ====================
 def transform_and_calculate_metrics(**context):
-    print("--- STARTING DIGITAL WALLELT DATA TRANSFORMATION ---")
+    print("--- STARTING DIGITAL WALLET DATA TRANSFORMATION ---")
     
     if not os.path.isfile(OUTPUT_PATH):
         print("No transaction file found to transform.")
@@ -78,9 +77,9 @@ def load_metrics_to_postgres(**context):
     conn = psycopg2.connect(production_db_uri)
     cursor = conn.cursor()
     
-    # 1. Create the table if it does not exist yet
+    # 1. Create the table if it does not exist yet (Anonymized Table Name)
     create_table_sql = """
-    CREATE TABLE IF NOT EXISTS esewa_metrics (
+    CREATE TABLE IF NOT EXISTS wallet_batch_metrics (
         id SERIAL PRIMARY KEY,
         run_timestamp TIMESTAMP,
         successful_transactions INT,
@@ -92,7 +91,7 @@ def load_metrics_to_postgres(**context):
     
     # 2. Insert the metric rows into the SQL database
     insert_sql = """
-    INSERT INTO esewa_metrics (run_timestamp, successful_transactions, failed_transactions, total_volume_npr)
+    INSERT INTO wallet_batch_metrics (run_timestamp, successful_transactions, failed_transactions, total_volume_npr)
     VALUES (%s, %s, %s, %s);
     """
     cursor.execute(insert_sql, (execution_date, success_count, failed_count, total_volume))
@@ -102,7 +101,7 @@ def load_metrics_to_postgres(**context):
     cursor.close()
     conn.close()
     
-    print("Successfully committed aggregated pipeline metrics to PostgreSQL database table 'esewa_metrics'!")
+    print("Successfully committed aggregated pipeline metrics to PostgreSQL database table 'wallet_batch_metrics'!")
 
 # ==================== DAG SCHEDULING ====================
 default_args = {
@@ -112,18 +111,18 @@ default_args = {
 }
 
 with DAG(
-    dag_id='esewa_transaction_pipeline',
+    dag_id='digital_wallet_transaction_pipeline',  # Updated DAG ID
     default_args=default_args,
     description='Full end-to-end production ETL pipeline storing data into PostgreSQL',
     schedule_interval=None,
     start_date=datetime(2021, 1, 1),
     catchup=False,
-    tags=['esewa_production_etl']
+    tags=['production_wallet_etl']
 ) as dag:
 
     extract_task = PythonOperator(
         task_id='extract_raw_data',
-        python_callable=generate_and_save_esewa_data,
+        python_callable=generate_and_save_wallet_data,
     )
 
     transform_task = PythonOperator(
@@ -140,9 +139,3 @@ with DAG(
 
     # The production lineage flow: Extract -> Transform -> Load
     extract_task >> transform_task >> load_task
-
-
-
-
-
-
