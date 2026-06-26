@@ -40,7 +40,7 @@ When executed via the Airflow scheduler, the pipeline builds an incremental tran
 
 ```sql
 -- Connect to the core database and inspect tracking metrics
-SELECT * FROM esewa_metrics;
+SELECT * FROM  wallet_batch_metrics;
 
 Analytical Database Table State:
 id |       run_timestamp       | successful_transactions | failed_transactions | total_volume_npr 
@@ -52,8 +52,8 @@ id |       run_timestamp       | successful_transactions | failed_transactions |
 
 ⚙️ Local Development Setup
 1. Clone the Repository:
-git clone [https://github.com/YOUR_USERNAME/esewa-transaction-etl-pipeline.git](https://github.com/YOUR_USERNAME/esewa-transaction-etl-pipeline.git)
-cd esewa-transaction-etl-pipeline
+git clone [https://github.com/DileshworiJ/digital-wallet-transaction-etl-pipeline.git](https://github.com/DileshworiJ/digital-wallet-transaction-etl-pipeline.git)
+cd digital-wallet-transaction-etl-pipeline
 
 2. Initialize Environment & Start Containers:
 docker compose up -d
